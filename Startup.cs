@@ -14,6 +14,7 @@ using SendBird.Api.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Text.Json;
+using SendBird.Api.Middleware;
 
 namespace SendBird.Api
 {
@@ -48,6 +49,18 @@ namespace SendBird.Api
                     NamingStrategy = new SnakeCaseNamingStrategy()
                 };
             });
+
+            // Todo: is this necessary? check !
+            var defaultContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            };
+
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = defaultContractResolver
+            };
+
             services.AddHttpClient();
 
             var section = Configuration.GetSection(nameof(ChannelConfig));
@@ -58,15 +71,11 @@ namespace SendBird.Api
             var appConfig = section.Get<ApplicationConfig>();
             services.AddSingleton(appConfig);
 
-            var defaultContractResolver = new DefaultContractResolver
+            // If using IIS:
+            services.Configure<IISServerOptions>(options =>
             {
-                NamingStrategy = new SnakeCaseNamingStrategy()
-            };
-
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                ContractResolver = defaultContractResolver
-            };
+                options.AllowSynchronousIO = true;
+            });
 
             services.AddLogging(logging =>
             {
@@ -92,7 +101,7 @@ namespace SendBird.Api
             app.UseCors();
 
             //app.UseAuthorization();
-
+            app.UseMiddleware<ValidateSignature>();
 
 
             app.UseEndpoints(endpoints =>

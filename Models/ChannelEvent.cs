@@ -16,10 +16,11 @@ namespace SendBird.Api.Models
 
         public string Category { get; set; }
         public string CreatedAt { get; set; }
+        public string InvitedAt { get; set; }
         public List<User> Members { get; set; }
         public User Inviter { get; set; }
+        public List<User> Invitees { get; set; }
         public T Channel { get; set; }
-
         public string AppId;
     }
 }

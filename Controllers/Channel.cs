@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Sendbird.Entities;
 using SendBird.Api.Models;
-using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.Http.Headers;
-using Sendbird.Enums;
-using Newtonsoft.Json.Serialization;
-using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace SendBird.Api.Controllers
 {
@@ -49,17 +46,18 @@ namespace SendBird.Api.Controllers
                 _logger.LogTrace("Channel created event notification received from webhook with following information:\n {channelCreatedEvent}", channelCreatedEvent);
 
                 var channelRelativeUrl = channelCreatedEvent.Channel.ChannelUrl;
-
-                //Post admin message to the channel
+                var response = new HttpResponseMessage();
                 try
                 {
-                    var postUrl = $"https://api-{_appConfig.AppId}.sendbird.com/v3/group_channels/{channelRelativeUrl}/messages";
-                    var httpClient = _clientFactory.CreateClient();
-                    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    httpClient.DefaultRequestHeaders.Add("Api-Token", _appConfig.MasterApiToken);
-                    var json = JsonConvert.SerializeObject(_channelConfig.AdminMessage);
-                    var response = await httpClient.PostAsync(postUrl, new StringContent(json));
-
+                    if (channelCreatedEvent.Category == "group_channel:create")
+                    {
+                        //Post admin message to the channel
+                        response = await SendAdminMessageToChannel(channelCreatedEvent);
+                    }
+                    else if (channelCreatedEvent.Category == "group_channel:invite")
+                    {
+                        response = await SendWelcomeNotificationToChannel(channelCreatedEvent);
+                    }
                     if (!response.IsSuccessStatusCode)
                     {
                         _logger.LogError($"Failed to post admin message to the group channel with id:{channelRelativeUrl}");
@@ -80,7 +78,51 @@ namespace SendBird.Api.Controllers
             return Ok();
         }
 
+        public async Task<HttpResponseMessage> SendAdminMessageToChannel(ChannelEvent<GroupChannel> channelCreatedEvent)
+        {
+            //Post admin message to the channel
+            var channelRelativeUrl = channelCreatedEvent.Channel.ChannelUrl;
 
+            var postUrl = $"https://api-{_appConfig.AppId}.sendbird.com/v3/group_channels/{channelRelativeUrl}/messages";
+            var httpClient = _clientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpClient.DefaultRequestHeaders.Add("Api-Token", _appConfig.MasterApiToken);
+            var json = JsonConvert.SerializeObject(_channelConfig.AdminMessage);
+            var response = await httpClient.PostAsync(postUrl, new StringContent(json));
+
+            return response;
+        }
+
+        public async Task<HttpResponseMessage> SendWelcomeNotificationToChannel(ChannelEvent<GroupChannel> channelCreatedEvent)
+        {
+            //Post admin message to the channel
+            var channelRelativeUrl = channelCreatedEvent.Channel.ChannelUrl;
+            var response = new HttpResponseMessage();
+            if (channelCreatedEvent.Invitees != null && channelCreatedEvent.Invitees.Count > 0)
+            {
+                List<string> addedUsers = new List<string>(); ;
+                foreach (var user in channelCreatedEvent.Invitees)
+                {
+                    addedUsers.Add(user.Nickname);
+                }
+                var welcomeNotification = "Welcome to the channel: " + String.Join(", ", addedUsers) + ". Have a fun filled chat !";
+                var message = new CustomMessage();
+                message.Message = welcomeNotification;
+                message.MessageType = Sendbird.Enums.MessageType.AdminMessage;
+                message.Data = null;
+
+                var postUrl = $"https://api-{_appConfig.AppId}.sendbird.com/v3/group_channels/{channelRelativeUrl}/messages";
+                var httpClient = _clientFactory.CreateClient();
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                httpClient.DefaultRequestHeaders.Add("Api-Token", _appConfig.MasterApiToken);
+                var json = JsonConvert.SerializeObject(message);
+                response = await httpClient.PostAsync(postUrl, new StringContent(json));
+            }
+
+            return response;
+        }
+
+        #region Test code - Please ignore
         //[HttpPost]
         //[Route("created")]
         //public async Task<IActionResult> post(object evt = null)
@@ -126,5 +168,6 @@ namespace SendBird.Api.Controllers
         //{
         //    return Ok();
         //}
+        #endregion
     }
 }
