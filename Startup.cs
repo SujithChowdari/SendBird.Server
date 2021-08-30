@@ -29,7 +29,25 @@ namespace SendBird.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                    });
+            });
+
+            services.AddControllers(options =>
+            {
+                options.AllowEmptyInputInBodyModelBinding = true;
+            }).AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                };
+            });
             services.AddHttpClient();
 
             var section = Configuration.GetSection(nameof(ChannelConfig));
@@ -49,21 +67,33 @@ namespace SendBird.Api
             {
                 ContractResolver = defaultContractResolver
             };
+
+            services.AddLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddConsole();
+                logging.AddDebug();
+                //logg
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            app.UseCors();
+
+            //app.UseAuthorization();
+
+
 
             app.UseEndpoints(endpoints =>
             {

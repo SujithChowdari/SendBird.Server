@@ -5,3 +5,8 @@
 /bin/Debug/netcoreapp3.1
 /obj
 /.vs/SendBird.Api
+/Properties/PublishProfiles
+/Properties/ServiceDependencies
+/SendBird.Api.csproj.user
+/bin/Release/netcoreapp3.1
+/.config/dotnet-tools.json

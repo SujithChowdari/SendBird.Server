@@ -1,10 +1,13 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Sendbird.Entities;
 using System;
 using System.Collections.Generic;
 
 namespace SendBird.Api.Models
 {
-    public class ChannelEvent<T> where T: ChannelBase
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
+    public class ChannelEvent<T> 
     {
         public ChannelEvent()
         {
@@ -12,7 +15,7 @@ namespace SendBird.Api.Models
         }
 
         public string Category { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string CreatedAt { get; set; }
         public List<User> Members { get; set; }
         public User Inviter { get; set; }
         public T Channel { get; set; }

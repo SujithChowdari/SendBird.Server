@@ -36,7 +36,7 @@ namespace SendBird.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChannelCreated(ChannelEvent<GroupChannel> channelCreatedEvent)
+        public async Task<IActionResult> ChannelCreated(ChannelEvent<GroupChannel> channelCreatedEvent = null)
         {
             if (channelCreatedEvent == null)
             {
@@ -63,14 +63,14 @@ namespace SendBird.Api.Controllers
                     if (!response.IsSuccessStatusCode)
                     {
                         _logger.LogError($"Failed to post admin message to the group channel with id:{channelRelativeUrl}");
-                        return StatusCode(StatusCodes.Status500InternalServerError);
+                        return StatusCode(StatusCodes.Status500InternalServerError, channelCreatedEvent);
                     }
                 }
                 catch (Exception ex)
                 {
                     //either log it or alert through emails, as necessary
                     _logger.LogError($"Failed to post admin message to the group channel with id:{channelRelativeUrl} with exception:", ex);
-                    return StatusCode(StatusCodes.Status500InternalServerError);
+                    return StatusCode(StatusCodes.Status500InternalServerError, ex);
                 }
             }
 
@@ -81,43 +81,50 @@ namespace SendBird.Api.Controllers
         }
 
 
-        [HttpGet]
-        [Route("created")]
-        public async Task<IActionResult> post()
-        {
+        //[HttpPost]
+        //[Route("created")]
+        //public async Task<IActionResult> post(object evt = null)
+        //{
 
-            //_logger.LogTrace("Channel created event notification received from webhook with following information:\n {channelCreatedEvent}", channelCreatedEvent);
+        //    //_logger.LogTrace("Channel created event notification received from webhook with following information:\n {channelCreatedEvent}", channelCreatedEvent);
 
-            //AdminMessage adminMessage = new AdminMessage();
-            //adminMessage.Message = _channelConfig.AdminMessage.Message;
-            //adminMessage.Data = _channelConfig.AdminMessage.Data;
-            //adminMessage.Type = MessageType.AdminMessage;
-            //adminMessage.MessageId = Guid.NewGuid();
+        //    //AdminMessage adminMessage = new AdminMessage();
+        //    //adminMessage.Message = _channelConfig.AdminMessage.Message;
+        //    //adminMessage.Data = _channelConfig.AdminMessage.Data;
+        //    //adminMessage.Type = MessageType.AdminMessage;
+        //    //adminMessage.MessageId = Guid.NewGuid();
 
-            //Post admin message to the channel
-            var channelRelativeUrl = "sendbird_group_channel_333278804_d461e86f70235b7b51dccda0f6a41947f3e2ee89";
-            //adminMessage.ChannelUrl = channelRelativeUrl;
-            try
-            {
-                var postUrl = $"https://api-{_appConfig.AppId}.sendbird.com/v3/group_channels/{channelRelativeUrl}/messages";
-                var httpClient = _clientFactory.CreateClient();
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                httpClient.DefaultRequestHeaders.Add("Api-Token", _appConfig.MasterApiToken);
-                var json = JsonConvert.SerializeObject(_channelConfig.AdminMessage);
-                var response = await httpClient.PostAsync(postUrl, new StringContent(json));
-                var x = response.Content.ReadAsStringAsync();
-            }
-            catch (Exception ex)
-            {
-                //either log it or alert through emails, as necessary
-                _logger.LogError($"Failed to post admin message to the group channel with id:{channelRelativeUrl}");
-            }
+        //    //Post admin message to the channel
+        //    var channelRelativeUrl = "sendbird_group_channel_333278804_d461e86f70235b7b51dccda0f6a41947f3e2ee89";
+        //    //adminMessage.ChannelUrl = channelRelativeUrl;
+        //    try
+        //    {
+        //        var postUrl = $"https://api-{_appConfig.AppId}.sendbird.com/v3/group_channels/{channelRelativeUrl}/messages";
+        //        var httpClient = _clientFactory.CreateClient();
+        //        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //        httpClient.DefaultRequestHeaders.Add("Api-Token", _appConfig.MasterApiToken);
+        //        var json = JsonConvert.SerializeObject(_channelConfig.AdminMessage);
+        //        var response = await httpClient.PostAsync(postUrl, new StringContent(json));
+        //        var x = response.Content.ReadAsStringAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //either log it or alert through emails, as necessary
+        //        _logger.LogError($"Failed to post admin message to the group channel with id:{channelRelativeUrl}");
+        //    }
 
 
-            _logger.LogDebug($"Successfully sent admin message to channel");
+        //    _logger.LogDebug($"Successfully sent admin message to channel");
 
-            // 200 Ok result.
-            return Ok();
-        }
+        //    // 200 Ok result.
+        //    return Ok();
+        //}
+
+        //[HttpPost]
+        //[Route("test")]
+        //public IActionResult test(object test1 = null)
+        //{
+        //    return Ok();
+        //}
     }
 }
